@@ -16,6 +16,7 @@ import (
 	// "github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+	"stori-challenge/config"
 )
 
 type StoriChallengeStackProps struct {
@@ -63,7 +64,7 @@ func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriC
 		SecurityGroups: &[]awsec2.ISecurityGroup{
 			rdsSecurityGroup,
 		},
-		DatabaseName:       jsii.String("postgres"),
+		DatabaseName:       jsii.String(config.DBName(stack)),
 		PubliclyAccessible: jsii.Bool(true),
 		DeletionProtection: jsii.Bool(false),
 		RemovalPolicy:      awscdk.RemovalPolicy_DESTROY,
@@ -90,10 +91,11 @@ func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriC
 		Environment: &map[string]*string{
 			"BUCKET_NAME":  bucket.BucketName(),
 			"TEMPLATE_KEY": jsii.String("email_template.html"),
-			"USE_SES":      jsii.String("False"),
+			"USE_SES":      jsii.String(config.EnableSES(stack)),
 			"SENDER":       jsii.String("alex.contredel@gmail.com"),
 			"RECIPIENT":    jsii.String("alexcondel17@gmail.com"),
 		},
+		Vpc: vpc,
 	})
 
 	// Create store-summary-lambda
@@ -119,6 +121,7 @@ func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriC
 			"STORE_ARN": storeSummaryLambda.FunctionArn(),
 		},
 		AllowPublicSubnet: jsii.Bool(true),
+		Vpc:               vpc,
 	})
 
 	initLambda.Connections().AllowTo(rdsSecurityGroup, awsec2.Port_Tcp(jsii.Number(5432)), jsii.String("Allow Lambda to access RDS instance"))
@@ -143,13 +146,14 @@ func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriC
 
 	// Grant permission for process-csv-lambda to invoke send-summary-lambda
 	sendSummaryLambda.GrantInvoke(processCsvLambda)
+	//processCsvLambda.GrantInvoke(sendSummaryLambda)
 
 	// Configure the security group to allow connections between Lambda functions and RDS instance
 	lambdaSecurityGroup := awsec2.NewSecurityGroup(stack, jsii.String("LambdaSecurityGroup"), &awsec2.SecurityGroupProps{
 		Vpc: vpc,
 	})
-	//processCsvLambda.Connections().AddSecurityGroup(lambdaSecurityGroup)
-	//sendSummaryLambda.Connections().AddSecurityGroup(lambdaSecurityGroup)
+	processCsvLambda.Connections().AddSecurityGroup(lambdaSecurityGroup)
+	sendSummaryLambda.Connections().AddSecurityGroup(lambdaSecurityGroup)
 	storeSummaryLambda.Connections().AddSecurityGroup(lambdaSecurityGroup)
 	initLambda.Connections().AddSecurityGroup(lambdaSecurityGroup)
 
@@ -199,7 +203,7 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	NewStoriChallengeStack(app, "StoriChallengeStack", &StoriChallengeStackProps{
+	NewStoriChallengeStack(app, config.StackName(app), &StoriChallengeStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},

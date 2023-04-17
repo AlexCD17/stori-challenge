@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"io"
+	"log"
 	"os"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
+	lmbda "github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
-	lmbda "github.com/aws/aws-sdk-go-v2/service/lambda"
-	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"strconv"
 )
@@ -101,20 +101,24 @@ func processCsvData(csvData string) (SummaryData, error) {
 }
 
 func invokeLambda(ctx context.Context, summaryData *SummaryData, lambdaName string) error {
-	lambdaClient := lmbda.New(lmbda.Options{Region: "us-east-1"})
+	cfg, err := config.LoadDefaultConfig(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to load SDK configuration: %v", err)
+	}
+
+	lambdaClient := lambda.NewFromConfig(cfg)
 
 	data, err := json.Marshal(summaryData)
 	if err != nil {
 		return fmt.Errorf("failed to marshal summary data: %v", err)
 	}
 
-	input := &lmbda.InvokeInput{
-		FunctionName:   aws.String(lambdaName),
-		InvocationType: types.InvocationType("Event"),
-		Payload:        data,
+	input := &lambda.InvokeInput{
+		FunctionName: aws.String(lambdaName),
+		Payload:      data,
 	}
 
-	_, err = lambdaClient.Invoke(ctx, input)
+	_, err = lambdaClient.Invoke(context.TODO(), input)
 	if err != nil {
 		return fmt.Errorf("failed to invoke %s: %v", lambdaName, err)
 	}
@@ -155,5 +159,5 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 }
 
 func main() {
-	lambda.Start(handler)
+	lmbda.Start(handler)
 }
