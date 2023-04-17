@@ -1,26 +1,36 @@
 package main
 
-// import (
-// 	"testing"
+import (
+	"testing"
 
-// 	"github.com/aws/aws-cdk-go/awscdk/v2"
-// 	"github.com/aws/aws-cdk-go/awscdk/v2/assertions"
-// 	"github.com/aws/jsii-runtime-go"
-// )
+	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/jsii-runtime-go"
+	"github.com/stretchr/testify/require"
+)
 
-// example tests. To run these tests, uncomment this file along with the
-// example resource in stori-challenge_test.go
-// func TestStoriChallengeStack(t *testing.T) {
-// 	// GIVEN
-// 	app := awscdk.NewApp(nil)
+func TestStoriChallengeStack(t *testing.T) {
+	// Create a new app for testing
+	app := awscdk.NewApp(nil)
 
-// 	// WHEN
-// 	stack := NewStoriChallengeStack(app, "MyStack", nil)
+	// Create a new StoriChallengeStack with the app
+	stack := NewStoriChallengeStack(app, "TestStack", nil)
 
-// 	// THEN
-// 	template := assertions.Template_FromStack(stack)
+	// Test if resources exist in the stack
+	bucket := stack.Node().TryFindChild(jsii.String("storiChallenge-bucket"))
+	require.NotNil(t, bucket, "S3 bucket not found in stack")
 
-// 	template.HasResourceProperties(jsii.String("AWS::SQS::Queue"), map[string]interface{}{
-// 		"VisibilityTimeout": 300,
-// 	})
-// }
+	rdsInstance := stack.Node().TryFindChild(jsii.String("StoriRdsInstance"))
+	require.NotNil(t, rdsInstance, "RDS instance not found in stack")
+
+	initLambda := stack.Node().TryFindChild(jsii.String("InitLambda"))
+	require.NotNil(t, initLambda, "InitLambda not found in stack")
+
+	sendSummaryLambda := stack.Node().TryFindChild(jsii.String("SendSummaryLambda"))
+	require.NotNil(t, sendSummaryLambda, "SendSummaryLambda not found in stack")
+
+	storeSummaryLambda := stack.Node().TryFindChild(jsii.String("StoreSummaryLambda"))
+	require.NotNil(t, storeSummaryLambda, "StoreSummaryLambda not found in stack")
+
+	processCsvLambda := stack.Node().TryFindChild(jsii.String("ProcessCsvLambda"))
+	require.NotNil(t, processCsvLambda, "ProcessCsvLambda not found in stack")
+}
