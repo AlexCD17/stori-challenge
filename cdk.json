@@ -44,12 +44,11 @@
     "@aws-cdk/aws-redshift:columnId": true,
     "@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2": true,
     "enableSES": false,
-    "deploymentRegion": "us-east-1",
-    "defaultUserID": "653480115121",
     "dbName": "postgres",
     "stackName": "StoriChallengeStack",
     "dbUser": "adminStori",
-    "dbPass": "adminPass"
-
+    "dbPass": "adminPass",
+    "senderEmail": "alex.contredel@gmail.com",
+    "recipientEmail": "alexcondel17@gmail.com"
   }
 }

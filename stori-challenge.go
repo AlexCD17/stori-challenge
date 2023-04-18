@@ -23,12 +23,16 @@ type StoriChallengeStackProps struct {
 }
 
 func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriChallengeStackProps) awscdk.Stack {
-	bucketName := jsii.String("storiChallenge-bucket")
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.StackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
+
+	/* -----------------------------------------------------------------------------------------------------------------
+	    RESOURCE DEFINITION
+
+	-------------------------------------------------------------------------------------------------------------------*/
 
 	// Create a VPC for the RDS instance and Lambda functions
 	vpc := awsec2.NewVpc(stack, jsii.String("StoriVPC"), &awsec2.VpcProps{
@@ -40,7 +44,7 @@ func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriC
 	})
 
 	// Create an S3 bucket
-	bucket := awss3.NewBucket(stack, bucketName, &awss3.BucketProps{
+	bucket := awss3.NewBucket(stack, jsii.String("storiChallenge-bucket"), &awss3.BucketProps{
 		Versioned: jsii.Bool(false),
 	})
 
@@ -59,7 +63,7 @@ func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriC
 		}),
 		InstanceType: awsec2.NewInstanceType(jsii.String("t3.micro")),
 		Vpc:          vpc,
-		Credentials:  awsrds.Credentials_FromSecret(rdsSecret, jsii.String("adminStori")),
+		Credentials:  awsrds.Credentials_FromSecret(rdsSecret, jsii.String(config.DBUser(stack))),
 		SecurityGroups: &[]awsec2.ISecurityGroup{
 			rdsSecurityGroup,
 		},
@@ -91,8 +95,8 @@ func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriC
 			"BUCKET_NAME":  bucket.BucketName(),
 			"TEMPLATE_KEY": jsii.String("email_template.html"),
 			"USE_SES":      jsii.String(config.EnableSES(stack)),
-			"SENDER":       jsii.String("alex.contredel@gmail.com"),
-			"RECIPIENT":    jsii.String("alexcondel17@gmail.com"),
+			"SENDER":       jsii.String(config.SenderEmail(stack)),
+			"RECIPIENT":    jsii.String(config.RecipientEmail(stack)),
 		},
 		Vpc: vpc,
 	})
@@ -122,6 +126,11 @@ func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriC
 		AllowPublicSubnet: jsii.Bool(true),
 		Vpc:               vpc,
 	})
+
+	/* -----------------------------------------------------------------------------------------------------------------
+	    PERMISSION GRANTING
+
+	-------------------------------------------------------------------------------------------------------------------*/
 
 	initLambda.Connections().AllowTo(rdsSecurityGroup, awsec2.Port_Tcp(jsii.Number(5432)), jsii.String("Allow Lambda to access RDS instance"))
 	storeSummaryLambda.Connections().AllowTo(rdsSecurityGroup, awsec2.Port_Tcp(jsii.Number(5432)), jsii.String("Allow Lambda to access RDS instance"))
@@ -164,6 +173,11 @@ func NewStoriChallengeStack(scope constructs.Construct, id string, props *StoriC
 		Actions:   &[]*string{jsii.String("ses:SendEmail"), jsii.String("ses:SendRawEmail")},
 		Resources: &[]*string{jsii.String("*")},
 	}))
+
+	/* -----------------------------------------------------------------------------------------------------------------
+	    RESOURCE HELPERS
+
+	-------------------------------------------------------------------------------------------------------------------*/
 
 	// Create the custom resource to trigger the init Lambda
 	initTrigger := customresources.NewAwsCustomResource(stack, jsii.String("InitLambdaTrigger"), &customresources.AwsCustomResourceProps{

@@ -24,6 +24,7 @@ type SummaryData struct {
 	CreditTotal float64 `json:"credit_total"`
 }
 
+// readCsvFromS3 reads a CSV file from S3 and returns its contents as a string.
 func readCsvFromS3(bucket, key string) (string, error) {
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
@@ -56,6 +57,7 @@ func readCsvFromS3(bucket, key string) (string, error) {
 	return buf.String(), nil
 }
 
+// processCsvData processes the CSV data and returns a SummaryData struct containing the total debit and credit amounts.
 func processCsvData(csvData string) (SummaryData, error) {
 	summary := map[string]float64{
 		"debit":  0,
@@ -68,6 +70,7 @@ func processCsvData(csvData string) (SummaryData, error) {
 		return SummaryData{}, fmt.Errorf("failed to read header line: %w", err)
 	}
 
+	// Process each record in the CSV file
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
@@ -77,20 +80,24 @@ func processCsvData(csvData string) (SummaryData, error) {
 			return SummaryData{}, fmt.Errorf("failed to read record: %w", err)
 		}
 
+		// Check that the record has the required columns
 		if len(record) < 4 {
 			return SummaryData{}, fmt.Errorf("record has missing columns: %v", record)
 		}
 
+		// Get the transaction type (debit or credit)
 		typ := strings.ToLower(record[1])
 		if typ != "debit" && typ != "credit" {
 			return SummaryData{}, fmt.Errorf("invalid transaction type: %s", typ)
 		}
 
+		// Get the transaction amount
 		amount, err := strconv.ParseFloat(record[2], 64)
 		if err != nil {
 			return SummaryData{}, fmt.Errorf("failed to parse amount: %w", err)
 		}
 
+		// Update the summary map
 		summary[typ] += amount
 	}
 
@@ -100,6 +107,7 @@ func processCsvData(csvData string) (SummaryData, error) {
 	}, nil
 }
 
+// Invokes lambdas for next steps
 func invokeLambda(ctx context.Context, summaryData *SummaryData, lambdaName string) error {
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
@@ -126,6 +134,8 @@ func invokeLambda(ctx context.Context, summaryData *SummaryData, lambdaName stri
 	return nil
 }
 
+// This function is the main entry point for the Lambda function. It takes in an S3 event, reads and processes
+// the corresponding CSV file, and invokes two separate Lambda functions with the resulting summary data.
 func handler(ctx context.Context, s3Event events.S3Event) error {
 
 	for _, record := range s3Event.Records {
@@ -143,18 +153,18 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 			return fmt.Errorf("failed to process CSV data: %w", err)
 		}
 
-		err = invokeLambda(ctx, &summary, os.Getenv("SEND_ARN"))
-		if err != nil {
-			return err
-		}
-
+		// Store records
 		err = invokeLambda(ctx, &summary, os.Getenv("STORE_ARN"))
 		if err != nil {
 			return err
 		}
 
+		// Send email
+		err = invokeLambda(ctx, &summary, os.Getenv("SEND_ARN"))
+		if err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 

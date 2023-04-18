@@ -30,7 +30,7 @@ func StackName(scope constructs.Construct) string {
 	return stackName
 }
 
-// DBUser DBUser  change user id by 'cdk.json/context/dbUser'.
+// DBUser   change user id by 'cdk.json/context/dbUser'.
 func DBUser(scope constructs.Construct) string {
 	userID := "adminStori"
 
@@ -42,7 +42,7 @@ func DBUser(scope constructs.Construct) string {
 	return userID
 }
 
-// DBPass DBUser  change user id by 'cdk.json/context/dbPass'.
+// DBPass   change user id by 'cdk.json/context/dbPass'.
 func DBPass(scope constructs.Construct) string {
 	userID := "adminPass"
 
@@ -54,16 +54,28 @@ func DBPass(scope constructs.Construct) string {
 	return userID
 }
 
-// DefaultRegion change region by 'cdk.json/context/defaultRegion'.
-func DefaultRegion(scope constructs.Construct) string {
-	defaultRegion := "us-east-1"
+// SenderEmail change user id by 'cdk.json/context/senderEmail'.
+func SenderEmail(scope constructs.Construct) string {
+	userID := "someemail@email.com"
 
-	ctxValue := scope.Node().TryGetContext(jsii.String("defaultRegion"))
+	ctxValue := scope.Node().TryGetContext(jsii.String("senderEmail"))
 	if v, ok := ctxValue.(string); ok {
-		defaultRegion = v
+		userID = v
 	}
 
-	return defaultRegion
+	return userID
+}
+
+// RecipientEmail   change user id by 'cdk.json/context/recipientEmail'.
+func RecipientEmail(scope constructs.Construct) string {
+	userID := "recipient@some.com"
+
+	ctxValue := scope.Node().TryGetContext(jsii.String("recipientEmail"))
+	if v, ok := ctxValue.(string); ok {
+		userID = v
+	}
+
+	return userID
 }
 
 // DBName change region by 'cdk.json/context/dbName'.

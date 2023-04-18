@@ -59,7 +59,7 @@ func initializeDB(ctx context.Context, secretName string) error {
 		id SERIAL PRIMARY KEY,
 		debit_total NUMERIC(15, 2),
 		credit_total NUMERIC(15, 2),
-		created_at DATE
+		created_at VARCHAR
 	);`
 
 	_, err = db.Exec(createTableQuery)

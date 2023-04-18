@@ -24,14 +24,15 @@ func main() {
 	lambda.Start(handler)
 }
 
+// handler function that stores summary data into a PostgreSQL database using a secret retrieved from AWS Secrets Manager.
 func handler(ctx context.Context, summaryData *SummaryData) error {
-	secretName := os.Getenv("SECRET_ARN")
-	err := storeSummaryData(summaryData, secretName)
+	secretName := os.Getenv("SECRET_ARN")            // retrieve the name of the secret from an environment variable
+	err := storeSummaryData(summaryData, secretName) // call function to store the summary data using the secret
 	if err != nil {
 		return fmt.Errorf("failed to store summary data: %v", err)
 	}
 
-	return nil
+	return nil // return nil to indicate success
 }
 
 func storeSummaryData(summaryData *SummaryData, secretName string) error {
@@ -53,7 +54,7 @@ func storeSummaryData(summaryData *SummaryData, secretName string) error {
 	}
 
 	connStr := fmt.Sprintf(
-		"host=%s port=%d dbname=postgres user=%s password=%s sslmode=require",
+		"host=%s port=%d dbname=postgres user=%s password=%s sslmode=require", // construct the connection string for the database
 		dbParams["host"].(string), int(dbParams["port"].(float64)), dbParams["username"].(string), dbParams["password"].(string))
 
 	db, err := sql.Open("postgres", connStr)
@@ -69,7 +70,7 @@ func storeSummaryData(summaryData *SummaryData, secretName string) error {
 
 	date := time.Now().Format("02-01-2006")
 
-	res, err := db.Exec(query, summaryData.DebitTotal, summaryData.CreditTotal, date)
+	res, err := db.Exec(query, summaryData.DebitTotal, summaryData.CreditTotal, date) // execute the SQL query to insert the summary data into the database
 	if err != nil {
 		return fmt.Errorf("failed to insert summary data into the database: %v", err)
 	}

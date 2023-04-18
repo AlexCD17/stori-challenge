@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"html/template"
 	"io"
@@ -26,35 +25,7 @@ type SummaryData struct {
 	CreditTotal float64 `json:"credit_total"`
 }
 
-func readLogoFromS3(bucket, key string) (string, error) {
-	cfg, err := config.LoadDefaultConfig(context.Background())
-	if err != nil {
-		return "", fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	s3Client := s3.NewFromConfig(cfg)
-	input := &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	}
-
-	result, err := s3Client.GetObject(context.Background(), input)
-	if err != nil {
-		return "", fmt.Errorf("failed to get object from S3: %w", err)
-	}
-	defer result.Body.Close()
-
-	buf := new(strings.Builder)
-	encoder := base64.NewEncoder(base64.StdEncoding, buf)
-	_, err = io.Copy(encoder, result.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read logo image: %w", err)
-	}
-	encoder.Close()
-
-	return buf.String(), nil
-}
-
+// readEmailTemplateFromS3 reads an email template from an S3 bucket and returns it as a string.
 func readEmailTemplateFromS3(bucket, key string) (string, error) {
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
@@ -82,6 +53,7 @@ func readEmailTemplateFromS3(bucket, key string) (string, error) {
 	return buf.String(), nil
 }
 
+// getBody generates an email body from an email template and summary data.
 func getBody(templateBucket, templateKey string, summary *SummaryData) (bytes.Buffer, error) {
 	templateStr, err := readEmailTemplateFromS3(templateBucket, templateKey)
 	if err != nil {
@@ -114,6 +86,7 @@ func getBody(templateBucket, templateKey string, summary *SummaryData) (bytes.Bu
 	return emailBody, nil
 }
 
+// sendEmail sends an email using SES.
 func sendEmail(emailBody bytes.Buffer, sender, recipient string) error {
 
 	cfg, err := config.LoadDefaultConfig(context.Background())
@@ -148,6 +121,7 @@ func sendEmail(emailBody bytes.Buffer, sender, recipient string) error {
 
 }
 
+// stores the email html generated to output/ folder in bucket
 func storeEmailOutput(bucketName, objectKey, emailBody string) error {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
