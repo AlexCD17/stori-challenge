@@ -67,15 +67,28 @@ func storeSummaryData(summaryData *SummaryData, secretName string) error {
 	}
 	defer db.Close()
 
+	// Convert maps to JSON strings
+	transactionsByMonthJSON, err := json.Marshal(summaryData.TransactionsByMonth)
+	if err != nil {
+		return err
+	}
+	avgCreditsByMonthJSON, err := json.Marshal(summaryData.AvgCreditsByMonth)
+	if err != nil {
+		return err
+	}
+	avgDebitsByMonthJSON, err := json.Marshal(summaryData.AvgDebitsByMonth)
+	if err != nil {
+		return err
+	}
+
 	query := `
-	INSERT INTO summary_records (debit_total, credit_total, total_balance, transactions_by_month, avg_credits_by_month, avg_debits_by_month, created_at)
+	INSERT INTO summary_records (debit_total, credit_total, transactions_by_month, avg_credits_by_month, avg_debits_by_month, total_balance, created_at)
 	VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 	date := time.Now().Format("02-01-2006")
 
-	res, err := db.Exec(query, summaryData.DebitTotal, summaryData.CreditTotal,
-		summaryData.TotalBalance, summaryData.TransactionsByMonth, summaryData.AvgCreditsByMonth,
-		summaryData.AvgDebitsByMonth, date) // execute the SQL query to insert the summary data into the database
+	res, err := db.Exec(query, summaryData.DebitTotal, summaryData.CreditTotal, transactionsByMonthJSON,
+		avgCreditsByMonthJSON, avgDebitsByMonthJSON, summaryData.TotalBalance, date) // execute the SQL query to insert the summary data into the database
 	if err != nil {
 		return fmt.Errorf("failed to insert summary data into the database: %v", err)
 	}
