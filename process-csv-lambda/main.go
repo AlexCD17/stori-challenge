@@ -20,8 +20,12 @@ import (
 )
 
 type SummaryData struct {
-	DebitTotal  float64 `json:"debit_total"`
-	CreditTotal float64 `json:"credit_total"`
+	TotalBalance        float64
+	TransactionsByMonth map[string]int
+	AvgCreditsByMonth   map[string]float64
+	AvgDebitsByMonth    map[string]float64
+	DebitTotal          float64
+	CreditTotal         float64
 }
 
 // readCsvFromS3 reads a CSV file from S3 and returns its contents as a string.
@@ -59,10 +63,11 @@ func readCsvFromS3(bucket, key string) (string, error) {
 
 // processCsvData processes the CSV data and returns a SummaryData struct containing the total debit and credit amounts.
 func processCsvData(csvData string) (SummaryData, error) {
-	summary := map[string]float64{
-		"debit":  0,
-		"credit": 0,
-	}
+	var debitTotal float64
+	var creditTotal float64
+	monthTransactions := make(map[string]int)
+	monthCredits := make(map[string]float64)
+	monthDebits := make(map[string]float64)
 
 	reader := csv.NewReader(strings.NewReader(csvData))
 	// Read and ignore the header line
@@ -97,13 +102,25 @@ func processCsvData(csvData string) (SummaryData, error) {
 			return SummaryData{}, fmt.Errorf("failed to parse amount: %w", err)
 		}
 
-		// Update the summary map
-		summary[typ] += amount
+		month := record[3][:7] // Extract year-month from the date
+		monthTransactions[month]++
+		if typ == "credit" {
+			creditTotal += amount
+			monthCredits[month] += amount
+		} else if typ == "debit" {
+			debitTotal += amount
+			monthDebits[month] += amount
+		}
+
 	}
 
 	return SummaryData{
-		DebitTotal:  summary["debit"],
-		CreditTotal: summary["credit"],
+		DebitTotal:          debitTotal,
+		CreditTotal:         creditTotal,
+		TotalBalance:        creditTotal + debitTotal,
+		TransactionsByMonth: monthTransactions,
+		AvgCreditsByMonth:   monthCredits,
+		AvgDebitsByMonth:    monthDebits,
 	}, nil
 }
 

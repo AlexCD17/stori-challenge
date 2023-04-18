@@ -45,10 +45,10 @@
     "@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2": true,
     "enableSES": false,
     "dbName": "postgres",
-    "stackName": "StoriChallengeStack",
+    "stackName": "StoriChallengeStackTest",
     "dbUser": "adminStori",
     "dbPass": "adminPass",
-    "senderEmail": "SENDER-EMAIL",
-    "recipientEmail": "RECIPIENT-EMAIL"
+    "senderEmail": "alex.contredel@gmail.com",
+    "recipientEmail": "alexcondel17@gmail.com"
   }
 }

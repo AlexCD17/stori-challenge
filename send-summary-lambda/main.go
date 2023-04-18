@@ -21,8 +21,12 @@ import (
 )
 
 type SummaryData struct {
-	DebitTotal  float64 `json:"debit_total"`
-	CreditTotal float64 `json:"credit_total"`
+	TotalBalance        float64
+	TransactionsByMonth map[string]int
+	AvgCreditsByMonth   map[string]float64
+	AvgDebitsByMonth    map[string]float64
+	DebitTotal          float64
+	CreditTotal         float64
 }
 
 // readEmailTemplateFromS3 reads an email template from an S3 bucket and returns it as a string.
@@ -65,16 +69,24 @@ func getBody(templateBucket, templateKey string, summary *SummaryData) (bytes.Bu
 		return bytes.Buffer{}, fmt.Errorf("failed to parse email template: %w", err)
 	}
 
-	logoURL := "https://blog.storicard.com/wp-content/uploads/2019/07/stori.logo-horizontal-03.png"
+	logoURL := "https://www.storicard.com/_next/static/media/complete-logo.0f6b7ce5.svg"
 
 	data := struct {
-		LogoURL     string
-		DebitTotal  string
-		CreditTotal string
+		LogoURL             string
+		DebitTotal          string
+		CreditTotal         string
+		TotalBalance        string
+		TransactionsByMonth map[string]int
+		AvgCreditsByMonth   map[string]float64
+		AvgDebitsByMonth    map[string]float64
 	}{
-		LogoURL:     logoURL,
-		DebitTotal:  strconv.FormatFloat(summary.DebitTotal, 'f', 2, 64),
-		CreditTotal: strconv.FormatFloat(summary.CreditTotal, 'f', 2, 64),
+		LogoURL:             logoURL,
+		DebitTotal:          strconv.FormatFloat(summary.DebitTotal, 'f', 2, 64),
+		CreditTotal:         strconv.FormatFloat(summary.CreditTotal, 'f', 2, 64),
+		TotalBalance:        strconv.FormatFloat(summary.TotalBalance, 'f', 2, 64),
+		TransactionsByMonth: summary.TransactionsByMonth,
+		AvgCreditsByMonth:   summary.AvgCreditsByMonth,
+		AvgDebitsByMonth:    summary.AvgDebitsByMonth,
 	}
 
 	// Execute the template with the data

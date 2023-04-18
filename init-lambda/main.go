@@ -56,11 +56,14 @@ func initializeDB(ctx context.Context, secretName string) error {
 	}
 
 	createTableQuery := `CREATE TABLE IF NOT EXISTS summary_records (
-		id SERIAL PRIMARY KEY,
-		debit_total NUMERIC(15, 2),
-		credit_total NUMERIC(15, 2),
-		created_at VARCHAR
-	);`
+	id SERIAL PRIMARY KEY,
+	debit_total NUMERIC(15, 2),
+	credit_total NUMERIC(15, 2),
+	total_balance NUMERIC(15, 2),
+	transactions_by_month JSONB,
+	avg_credits_by_month JSONB,
+	avg_debits_by_month JSONB,
+	created_at VARCHAR);`
 
 	_, err = db.Exec(createTableQuery)
 	if err != nil {
@@ -79,63 +82,83 @@ func uploadEmailTemplate(bucket string, key string) error {
 	s3Client := s3.NewFromConfig(cfg)
 
 	emailTemplate := `
-	<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Transaction Summary</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summary Email</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
+            background-color: #f7f8f8;
+            color: #333;
+            padding: 1rem;
             max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: auto;
         }
-        .logo {
-            max-width: 150px;
-            margin-bottom: 20px;
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
         }
-        .summary {
-            border-collapse: collapse;
+        h2 {
+            font-size: 1.25rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        p {
+            margin-bottom: 1rem;
+        }
+        img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+        table {
             width: 100%;
-            margin-bottom: 20px;
+            border-collapse: collapse;
         }
-        .summary th, .summary td {
-            border: 1px solid #dddddd;
+        th,
+        td {
+            padding: 0.5rem;
             text-align: left;
-            padding: 8px;
+            border: 1px solid #ccc;
         }
-        .summary th {
-            background-color: #f2f2f2;
+        th {
+            background-color: #222;
+            color: #fff;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img class="logo" src="{{.LogoURL}}" alt="Logo">
-        <h1>Transaction Summary</h1>
-        <table class="summary">
-            <thead>
-                <tr>
-                    <th>Transaction Type</th>
-                    <th>Total Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Debit</td>
-                    <td>{{.DebitTotal}}</td>
-                </tr>
-                <tr>
-                    <td>Credit</td>
-                    <td>{{.CreditTotal}}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <img src="{{.LogoURL}}" alt="Logo">
+    <h1>Account Summary</h1>
+    <p>Total Balance: {{.TotalBalance}}</p>
+    <h2>Transaction Summary</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Transactions</th>
+                <th>Average Credit</th>
+                <th>Average Debit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $month, $transactions := .TransactionsByMonth}}
+            <tr>
+                <td>{{$month}}</td>
+                <td>{{$transactions}}</td>
+                <td>{{index $.AvgCreditsByMonth $month}}</td>
+                <td>{{index $.AvgDebitsByMonth $month}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    <h2>Total Credits and Debits</h2>
+    <p>Total Credits: {{.CreditTotal}}</p>
+    <p>Total Debits: {{.DebitTotal}}</p>
 </body>
 </html>
 `
