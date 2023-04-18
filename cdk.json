@@ -48,7 +48,7 @@
     "stackName": "StoriChallengeStackTest",
     "dbUser": "adminStori",
     "dbPass": "adminPass",
-    "senderEmail": "alex.contredel@gmail.com",
-    "recipientEmail": "alexcondel17@gmail.com"
+    "senderEmail": "<SENDER-EMAIL>",
+    "recipientEmail": "<RECIPIENT-EMAIL>"
   }
 }
