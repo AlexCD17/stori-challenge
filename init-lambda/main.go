@@ -60,9 +60,9 @@ func initializeDB(ctx context.Context, secretName string) error {
 	debit_total NUMERIC(15, 2),
 	credit_total NUMERIC(15, 2),
 	total_balance NUMERIC(15, 2),
-	transactions_by_month JSONB,
-	avg_credits_by_month JSONB,
-	avg_debits_by_month JSONB,
+	transactions_by_month JSON,
+	avg_credits_by_month JSON,
+	avg_debits_by_month JSON,
 	created_at VARCHAR);`
 
 	_, err = db.Exec(createTableQuery)
