@@ -47,8 +47,9 @@
     "deploymentRegion": "us-east-1",
     "defaultUserID": "653480115121",
     "dbName": "postgres",
-    "stackName": "StoriChallengeStack"
-
+    "stackName": "StoriChallengeStack",
+    "dbUser": "adminStori",
+    "dbPass": "adminPass"
 
   }
 }

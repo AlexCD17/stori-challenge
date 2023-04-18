@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"os"
+	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	_ "github.com/lib/pq"
@@ -62,14 +63,20 @@ func storeSummaryData(summaryData *SummaryData, secretName string) error {
 	defer db.Close()
 
 	query := `
-		INSERT INTO summary_records (debit_total, credit_total)
-		VALUES ($1, $2)
+		INSERT INTO summary_records (debit_total, credit_total, created_at)
+		VALUES ($1, $2, $3)
 	`
 
-	_, err = db.Exec(query, summaryData.DebitTotal, summaryData.CreditTotal)
+	date := time.Now().Format("02-01-2006")
+
+	res, err := db.Exec(query, summaryData.DebitTotal, summaryData.CreditTotal, date)
 	if err != nil {
 		return fmt.Errorf("failed to insert summary data into the database: %v", err)
 	}
+
+	recIns, _ := res.RowsAffected()
+
+	fmt.Printf("Successfully inserted to db: %v rows affected", recIns)
 
 	return nil
 }

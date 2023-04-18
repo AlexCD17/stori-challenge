@@ -30,11 +30,23 @@ func StackName(scope constructs.Construct) string {
 	return stackName
 }
 
-// DefaultUserID  change user id by 'cdk.json/context/defaultUserID'.
-func DefaultUserID(scope constructs.Construct) string {
-	userID := "653480115121"
+// DBUser DBUser  change user id by 'cdk.json/context/dbUser'.
+func DBUser(scope constructs.Construct) string {
+	userID := "adminStori"
 
-	ctxValue := scope.Node().TryGetContext(jsii.String("defaultUserID"))
+	ctxValue := scope.Node().TryGetContext(jsii.String("dbUser"))
+	if v, ok := ctxValue.(string); ok {
+		userID = v
+	}
+
+	return userID
+}
+
+// DBPass DBUser  change user id by 'cdk.json/context/dbPass'.
+func DBPass(scope constructs.Construct) string {
+	userID := "adminPass"
+
+	ctxValue := scope.Node().TryGetContext(jsii.String("dbPass"))
 	if v, ok := ctxValue.(string); ok {
 		userID = v
 	}
